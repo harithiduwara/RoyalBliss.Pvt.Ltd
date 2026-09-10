@@ -45,11 +45,11 @@ jobs:
 
       - name: Configure GitHub Pages
         if: github.event_name != 'pull_request'
+        # Pages must be enabled once by hand under Settings -> Pages -> Source ->
+        # GitHub Actions. The enablement option is not usable here: the workflow
+        # token cannot create a Pages site ("Resource not accessible by
+        # integration"), it can only deploy to one that already exists.
         uses: actions/configure-pages@v5
-        with:
-          # Turns Pages on for the repository on the first run, so no visit to
-          # Settings is needed. Harmless once it is already enabled.
-          enablement: true
 
       - name: Upload the build
         if: github.event_name != 'pull_request'
