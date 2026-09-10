@@ -1,0 +1,52 @@
+{% from "partials/icons.html" import social_icon %}
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a class="brand" href="{{ url_for('site.index') }}" style="margin-bottom:16px">
+          {% include "partials/logo.html" %}
+          <span>
+            <span class="brand__name">{{ company.short_name }}</span>
+            <span class="brand__sub">{{ company.suffix }}</span>
+          </span>
+        </a>
+        <p>A food and beverage franchise operator building well-run, guest-obsessed outlets and holding every brand we represent to its own standard.</p>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="{{ url_for('site.about') }}">About Us</a></li>
+          <li><a href="{{ url_for('site.about') }}#values">Our Values</a></li>
+          <li><a href="{{ url_for('site.franchise') }}#careers">Careers</a></li>
+          <li><a href="{{ url_for('site.contact') }}">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Operations</h4>
+        <ul>
+          <li><a href="{{ url_for('site.brands') }}">Brand Portfolio</a></li>
+          <li><a href="{{ url_for('site.brands') }}#outlets">Our Outlets</a></li>
+          <li><a href="{{ url_for('site.about') }}#quality">Quality &amp; Safety</a></li>
+          <li><a href="{{ url_for('site.franchise') }}">Partner With Us</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Get in Touch</h4>
+        <ul>
+          <li>{{ contact.address_lines | join(', ') }}</li>
+          <li><a href="tel:{{ contact.phone_href }}">{{ contact.phone_display }}</a></li>
+          <li><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></li>
+        </ul>
+        <div class="socials" style="margin-top:16px">
+          {% for social in socials %}
+          <a href="{{ social.url }}" aria-label="{{ company.short_name }} on {{ social.name }}">{{ social_icon(social.icon) }}</a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>&copy; <span data-year>{{ current_year }}</span> {{ company.name }}. All rights reserved.</span>
+      <span>{{ company.registration }}</span>
+    </div>
+  </div>
+</footer>

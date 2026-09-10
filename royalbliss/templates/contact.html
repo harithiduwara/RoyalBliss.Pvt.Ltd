@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block content %}
+  {% with crumb = 'Contact',
+          heading = 'Get in touch',
+          intro = 'Franchise proposals, site offers, supplier registration or guest feedback — it all reaches a person, and we reply within two business days.' %}
+    {% include "partials/page_head.html" %}
+  {% endwith %}
+
+  <section class="section">
+    <div class="wrap">
+      <div class="split" style="align-items:start">
+
+        <div class="reveal" id="enquiry">
+          <span class="eyebrow">Enquiry Form</span>
+          <h2>Tell us what you need</h2>
+          <p>Fields marked <span style="color:var(--royal)">*</span> are required.</p>
+
+          {#
+            The site is served as static files, so the form is submitted by the
+            browser rather than by this app. Set FORM_ENDPOINT (see README) to a
+            form service URL; without one the form falls back to opening the
+            visitor's own email client.
+          #}
+          <form class="form" data-form
+                data-endpoint="{{ form_endpoint }}"
+                data-mailto="{{ contact.email }}"
+                data-subject="{{ company.short_name }} website enquiry"
+                method="post" action="mailto:{{ contact.email }}" enctype="text/plain">
+
+            <div class="form__row">
+              <div class="field">
+                <label for="name">Full name <span class="req">*</span></label>
+                <input type="text" id="name" name="name" autocomplete="name" maxlength="120" required>
+              </div>
+              <div class="field">
+                <label for="organisation">Company / organisation</label>
+                <input type="text" id="organisation" name="organisation" autocomplete="organization" maxlength="160">
+              </div>
+            </div>
+
+            <div class="form__row">
+              <div class="field">
+                <label for="email">Email <span class="req">*</span></label>
+                <input type="email" id="email" name="email" autocomplete="email" maxlength="200" required>
+              </div>
+              <div class="field">
+                <label for="phone">Phone</label>
+                <input type="tel" id="phone" name="phone" autocomplete="tel" maxlength="40">
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="topic">What is this about? <span class="req">*</span></label>
+              <select id="topic" name="topic" required>
+                <option value="">Please choose&hellip;</option>
+                {% for topic in topics %}<option>{{ topic }}</option>{% endfor %}
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="message">Message <span class="req">*</span></label>
+              <textarea id="message" name="message" maxlength="4000" required placeholder="A few lines about your brand, site, product or question."></textarea>
+            </div>
+
+            {# Honeypot: hidden from people, tempting to bots. #}
+            <div class="field" aria-hidden="true" style="position:absolute;left:-9999px">
+              <label for="company_website">Leave this field empty</label>
+              <input type="text" id="company_website" name="company_website" tabindex="-1" autocomplete="off">
+            </div>
+
+            <p class="form__status" hidden></p>
+
+            <div class="btn-row">
+              <button class="btn btn--primary" type="submit">Send enquiry</button>
+            </div>
+            <p class="form__note">We use the details you send only to respond to your enquiry. We do not sell or share them.</p>
+          </form>
+        </div>
+
+        <div class="reveal">
+          <div class="card">
+            <span class="eyebrow">Head Office</span>
+            <ul class="contact-list" style="margin-top:8px">
+              <li>
+                {{ icon('pin', 20) }}
+                <span><strong>Address</strong>{{ contact.address_lines | join('<br>') | safe }}</span>
+              </li>
+              <li>
+                {{ icon('phone', 20) }}
+                <span><strong>Telephone</strong><a href="tel:{{ contact.phone_href }}">{{ contact.phone_display }}</a></span>
+              </li>
+              <li>
+                {{ icon('mail', 20) }}
+                <span><strong>General</strong><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></span>
+              </li>
+              <li>
+                {{ icon('star', 20) }}
+                <span><strong>Franchise &amp; Partnerships</strong><a href="mailto:{{ contact.email_partnerships }}">{{ contact.email_partnerships }}</a></span>
+              </li>
+              <li>
+                {{ icon('people', 20) }}
+                <span><strong>Careers</strong><a href="mailto:{{ contact.email_careers }}">{{ contact.email_careers }}</a></span>
+              </li>
+              <li>
+                {{ icon('clock', 20) }}
+                <span><strong>Office Hours</strong>{{ contact.office_hours }}<br>Outlet hours differ &mdash; see <a href="{{ url_for('site.brands') }}#outlets">Outlets</a></span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="card" style="margin-top:26px">
+            <h3 style="margin-top:0">Find the head office</h3>
+            <p class="form__note">EDIT: paste a Google Maps embed here. Open Google Maps &rarr; your address &rarr; Share &rarr; Embed a map, and drop the <code>&lt;iframe&gt;</code> in place of this box.</p>
+            <div style="aspect-ratio:16/10;border-radius:12px;background:var(--royal-tint);display:grid;place-items:center;color:var(--royal)">
+              {{ icon('pin', 54, 'currentColor', 1.4) }}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+{% endblock %}

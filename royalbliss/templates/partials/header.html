@@ -1,0 +1,22 @@
+<header class="site-header">
+  <div class="wrap">
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="{{ url_for('site.index') }}">
+        {% include "partials/logo.html" %}
+        <span>
+          <span class="brand__name">{{ company.short_name }}</span>
+          <span class="brand__sub">{{ company.suffix }}</span>
+        </span>
+      </a>
+      <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav__links" id="nav-links">
+        {% for item in nav %}
+        <li><a href="{{ url_for(item.endpoint) }}"{% if request.endpoint == item.endpoint %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
+        {% endfor %}
+        <li class="nav__cta"><a class="btn btn--primary" href="{{ url_for('site.contact') }}#enquiry">Make an Enquiry</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>

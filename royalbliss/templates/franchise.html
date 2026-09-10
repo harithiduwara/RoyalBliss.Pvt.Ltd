@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon, feature_card, steps_list %}
+
+{% block content %}
+  {% with crumb = 'Partner With Us',
+          heading = 'Partner with ' ~ company.short_name,
+          intro = 'Four ways to work with us — as a brand owner awarding a territory, as a landlord, as a supplier, or as someone who wants to join the team.' %}
+    {% include "partials/page_head.html" %}
+  {% endwith %}
+
+  <section class="section">
+    <div class="wrap">
+      <div class="grid grid--2">
+        {% for track in tracks %}
+        <article class="card reveal">
+          <div class="card__icon">{{ icon(track.icon) }}</div>
+          <h3>{{ track.title }}</h3>
+          <p>{{ track.body }}</p>
+          <p class="mb-0"><a href="{{ track.anchor if track.anchor else url_for('site.contact') ~ '#enquiry' }}">{{ track.link_text }} &rarr;</a></p>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tint" id="brand-owners">
+    <div class="wrap">
+      <div class="split">
+        <div class="reveal">
+          <span class="eyebrow">For Brand Owners</span>
+          <h2>What a conversation with us looks like</h2>
+          {{ steps_list(brand_owner_steps) }}
+        </div>
+        <div class="split__media reveal" aria-hidden="true" style="background:linear-gradient(145deg,#6b1839,#4a0f27)">
+          <svg width="210" height="210" viewBox="0 0 200 200" fill="none" stroke="#e8d59a" stroke-width="2.2">
+            <path d="M62 46h58l20 20v88H62z" stroke="rgba(232,213,154,.45)"/>
+            <path d="M120 46v20h20M78 92h48M78 112h48M78 132h30" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="suppliers">
+    <div class="wrap">
+      <div class="center measure reveal">
+        <span class="eyebrow">For Suppliers</span>
+        <h2>What we need before we can buy from you</h2>
+      </div>
+      <div class="grid grid--3" style="margin-top:52px">
+        {% for requirement in supplier_requirements %}{{ feature_card(requirement) }}{% endfor %}
+      </div>
+      <p class="center" style="margin-top:34px"><a class="btn btn--outline" href="{{ url_for('site.contact') }}#enquiry">Register as a supplier</a></p>
+    </div>
+  </section>
+
+  <section class="section section--dark" id="careers">
+    <div class="wrap">
+      <div class="center measure reveal">
+        <span class="eyebrow">Careers</span>
+        <h2>Join the team</h2>
+        <p class="lede">We hire for attitude and train for skill. Experience helps; showing up and caring matters more.</p>
+      </div>
+      <div class="grid grid--3" style="margin-top:52px">
+        {% for role in roles %}{{ feature_card(role) }}{% endfor %}
+      </div>
+      <p class="center" style="margin-top:38px">Send your CV to <a href="mailto:{{ contact.email_careers }}" style="color:#e8d59a">{{ contact.email_careers }}</a> with the role in the subject line.</p>
+    </div>
+  </section>
+
+  <section class="section section--tint">
+    <div class="wrap">
+      <div class="center measure reveal">
+        <span class="eyebrow">FAQ</span>
+        <h2>Questions we are usually asked</h2>
+      </div>
+      <div class="faq reveal" style="margin-top:44px">
+        {% for faq in faqs %}
+        <details>
+          <summary>{{ faq.question }}</summary>
+          <div><p>{{ faq.answer }}</p></div>
+        </details>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-band reveal">
+        <h2>Ready to talk?</h2>
+        <p>Tell us who you are and what you have in mind. Enquiries are answered within two business days.</p>
+        <div class="btn-row center" style="margin-top:26px">
+          <a class="btn btn--gold" href="{{ url_for('site.contact') }}#enquiry">Open the enquiry form</a>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

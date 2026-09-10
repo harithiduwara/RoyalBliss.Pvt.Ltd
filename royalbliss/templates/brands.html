@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import feature_card, brand_card %}
+
+{% block content %}
+  {% with crumb = 'Brands & Outlets',
+          heading = 'Brands we operate',
+          intro = 'Every brand below is operated under a franchise agreement. The recipes, the standards and the trademarks belong to the brand owner — the execution is ours.' %}
+    {% include "partials/page_head.html" %}
+  {% endwith %}
+
+  <section class="section">
+    <div class="wrap">
+      <div class="center measure reveal">
+        <span class="eyebrow">Portfolio</span>
+        <h2>Our franchised brands</h2>
+        <p class="lede">Each brand we operate, with the categories and formats it covers.</p>
+      </div>
+      <div class="grid grid--3" style="margin-top:52px">
+        {% for item in brands %}{{ brand_card(item, item.name) }}{% endfor %}
+      </div>
+      <p class="center form__note" style="margin-top:34px">All trademarks and brand names shown remain the property of their respective owners. {{ company.name }} operates these brands as an authorised franchisee.</p>
+    </div>
+  </section>
+
+  <section class="section section--tint" id="outlets">
+    <div class="wrap">
+      <div class="center measure reveal">
+        <span class="eyebrow">Find Us</span>
+        <h2>Our outlets</h2>
+        <p class="lede">Opening hours vary by location and public holidays &mdash; call ahead if you are travelling.</p>
+      </div>
+      <div class="table-wrap reveal" style="margin-top:44px">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Outlet</th>
+              <th scope="col">Brand</th>
+              <th scope="col">Address</th>
+              <th scope="col">Hours</th>
+              <th scope="col">Phone</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for outlet in outlets %}
+            <tr>
+              <td>{{ outlet.name }}</td>
+              <td>{{ outlet.brand }}</td>
+              <td>{{ outlet.address }}</td>
+              <td>{{ outlet.hours }}</td>
+              <td><a href="tel:{{ outlet.phone_href }}">{{ outlet.phone_display }}</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="center measure reveal">
+        <span class="eyebrow">Beyond The Counter</span>
+        <h2>Other ways we serve</h2>
+      </div>
+      <div class="grid grid--3" style="margin-top:52px">
+        {% for channel in channels %}{{ feature_card(channel) }}{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-band reveal">
+        <h2>Have a site that suits one of our brands?</h2>
+        <p>We are actively reviewing high-footfall retail, mall and highway locations for the coming development cycle.</p>
+        <div class="btn-row center" style="margin-top:26px">
+          <a class="btn btn--gold" href="{{ url_for('site.contact') }}#enquiry">Submit a location</a>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
