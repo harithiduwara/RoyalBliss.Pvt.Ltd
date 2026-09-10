@@ -46,6 +46,10 @@ jobs:
       - name: Configure GitHub Pages
         if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5
+        with:
+          # Turns Pages on for the repository on the first run, so no visit to
+          # Settings is needed. Harmless once it is already enabled.
+          enablement: true
 
       - name: Upload the build
         if: github.event_name != 'pull_request'
