@@ -1,0 +1,64 @@
+{# Inline SVG icons — kept in one macro so pages stay readable. #}
+
+{% macro icon(name, size=24, stroke='currentColor', width=1.8) -%}
+{%- set paths = {
+  'storefront': '<path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/>',
+  'people': '<path d="M12 3a4 4 0 110 8 4 4 0 010-8zM4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/>',
+  'box': '<path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  'chart': '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  'chat': '<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/>',
+  'shield': '<path d="M12 2l8 4v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/>',
+  'pulse': '<path d="M3 12h4l3 8 4-16 3 8h4"/>',
+  'star': '<path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17l-5.9 3 1.2-6.5L2.5 8.9 9.1 8 12 2z"/>',
+  'truck': '<path d="M3 16V8a2 2 0 012-2h9v10M14 10h4l3 3v3M6.5 20a2 2 0 100-4 2 2 0 000 4zM17.5 20a2 2 0 100-4 2 2 0 000 4z"/>',
+  'clock': '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  'pin': '<path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>',
+  'phone': '<path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.2a2 2 0 012.1-.5c.9.3 1.8.6 2.8.7a2 2 0 011.7 2z"/>',
+  'mail': '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  'check': '<path d="M20 6L9 17l-5-5"/>',
+  'building': '<path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-7h6v7"/>'
+} -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="{{ stroke }}" stroke-width="{{ width }}" aria-hidden="true">{{ paths.get(name, paths['star']) | safe }}</svg>
+{%- endmacro %}
+
+{% macro social_icon(name) -%}
+{%- set paths = {
+  'facebook': '<path d="M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.25-1.5 1.55-1.5h1.65V3.6c-.29-.04-1.27-.12-2.41-.12-2.38 0-4.01 1.45-4.01 4.12V9.9H7.6V13h2.68v8h3.22z"/>',
+  'linkedin': '<path d="M6.94 8.5H4V20h2.94V8.5zM5.47 4a1.71 1.71 0 100 3.42 1.71 1.71 0 000-3.42zM20 13.6c0-3.1-1.66-4.54-3.87-4.54-1.79 0-2.59.98-3.03 1.67V8.5H10.2c.04.83 0 11.5 0 11.5h2.9v-6.42c0-.35.02-.7.13-.95.28-.69.92-1.41 1.98-1.41 1.4 0 1.96 1.06 1.96 2.62V20H20v-6.4z"/>'
+} -%}
+{%- if name == 'instagram' -%}
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.6"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+{%- else -%}
+<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">{{ paths.get(name, '') | safe }}</svg>
+{%- endif -%}
+{%- endmacro %}
+
+{# A feature card: icon, heading, body. #}
+{% macro feature_card(item) -%}
+<article class="card reveal">
+  {% if item.icon %}<div class="card__icon">{{ icon(item.icon) }}</div>{% endif %}
+  <h3>{{ item.title }}</h3>
+  <p>{{ item.body }}</p>
+</article>
+{%- endmacro %}
+
+{# A brand or format card with a coloured visual header. #}
+{% macro brand_card(item, heading) -%}
+<article class="card brand-card reveal">
+  <div class="brand-card__visual" style="background:{{ item.gradient }}"><span>{{ item.label }}</span></div>
+  <div class="brand-card__body">
+    <h3>{{ heading }}</h3>
+    <p>{{ item.body }}</p>
+    {% for tag in item.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+  </div>
+</article>
+{%- endmacro %}
+
+{# Numbered process steps. #}
+{% macro steps_list(steps) -%}
+<ol class="steps" style="margin-top:26px">
+  {% for step in steps %}
+  <li class="step"><h3>{{ step.title }}</h3><p>{{ step.body }}</p></li>
+  {% endfor %}
+</ol>
+{%- endmacro %}

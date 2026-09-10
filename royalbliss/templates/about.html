@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import feature_card %}
+
+{% block content %}
+  {% with crumb = 'About Us',
+          heading = 'Built around the shift, not the boardroom',
+          intro = company.name ~ ' is a food and beverage franchise operator. We take on international and regional brands in our territory and run them the way their founders intended.' %}
+    {% include "partials/page_head.html" %}
+  {% endwith %}
+
+  <section class="section">
+    <div class="wrap">
+      <div class="split">
+        <div class="reveal">
+          <span class="eyebrow">Our Story</span>
+          <h2>Why we chose the franchise route</h2>
+          <p>Starting a food brand from nothing is romantic. Running one well, in twenty locations, on a wet Tuesday, is a different discipline entirely &mdash; and it is the one we are good at.</p>
+          <p>We built {{ company.short_name }} around that second discipline. Franchising gives us proven recipes, tested equipment layouts and a brand guests already trust; our job is to make sure that promise is kept in every outlet carrying the sign, every trading hour.</p>
+          <p>That means we invest where guests actually feel it: in trained people, in equipment that is maintained rather than nursed, in ingredients from approved suppliers, and in managers who are on the floor during peak.</p>
+        </div>
+        <div class="split__media reveal" aria-hidden="true">
+          <svg width="220" height="220" viewBox="0 0 200 200" fill="none" stroke="#e8d59a" stroke-width="2.2">
+            <path d="M56 150V86c0-10 8-18 18-18h52c10 0 18 8 18 18v64" stroke="rgba(232,213,154,.45)"/>
+            <path d="M44 150h112M74 68V50M100 68V44M126 68V50" stroke-linecap="round"/>
+            <circle cx="100" cy="110" r="20"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tint" id="values">
+    <div class="wrap">
+      <div class="center measure reveal">
+        <span class="eyebrow">Our Values</span>
+        <h2>Four things we do not negotiate</h2>
+      </div>
+      <div class="grid grid--4" style="margin-top:52px">
+        {% for value in values %}{{ feature_card(value) }}{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="quality">
+    <div class="wrap">
+      <div class="split split--reverse">
+        <div class="split__media reveal" aria-hidden="true" style="background:linear-gradient(145deg,#2f5d50,#12352c)">
+          <svg width="210" height="210" viewBox="0 0 200 200" fill="none" stroke="#cfe8dd" stroke-width="2.2">
+            <rect x="56" y="40" width="88" height="120" rx="10" stroke="rgba(207,232,221,.4)"/>
+            <path d="M76 76h48M76 100h48M76 124h30" stroke-linecap="round"/>
+            <circle cx="100" cy="100" r="46" stroke="rgba(207,232,221,.25)"/>
+          </svg>
+        </div>
+        <div class="reveal">
+          <span class="eyebrow">Quality &amp; Food Safety</span>
+          <h2>Documented, checked, and checkable</h2>
+          <p>Every outlet runs a daily discipline that a franchisor auditor or a health inspector can walk in and verify at any time:</p>
+          <ul>
+            {% for point in quality_points %}<li>{{ point }}</li>{% endfor %}
+          </ul>
+          <p class="mb-0">Where a brand's own system is stricter than ours, theirs applies.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--dark">
+    <div class="wrap">
+      <div class="center measure reveal">
+        <span class="eyebrow">Leadership</span>
+        <h2>The people accountable</h2>
+        <p class="lede">A small leadership team, each with a defined area of ownership.</p>
+      </div>
+      <div class="grid grid--3" style="margin-top:52px">
+        {% for person in leadership %}
+        <article class="card reveal">
+          <h3>{{ person.role }}</h3>
+          <p><em>{{ person.name }}.</em> {{ person.body }}</p>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-band reveal">
+        <h2>Want the detail behind the summary?</h2>
+        <p>We are happy to walk brand owners, landlords and prospective suppliers through our operating model, audit history and development pipeline.</p>
+        <div class="btn-row center" style="margin-top:26px">
+          <a class="btn btn--gold" href="{{ url_for('site.contact') }}#enquiry">Request a meeting</a>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

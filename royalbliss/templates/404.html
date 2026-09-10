@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="section" style="text-align:center">
+    <div class="wrap">
+      <span class="eyebrow">Error 404</span>
+      <h1>That page has left the pass</h1>
+      <p class="lede measure center">The link may be out of date, or the page may have moved. Try one of these instead.</p>
+      <div class="btn-row center" style="margin-top:30px">
+        <a class="btn btn--primary" href="{{ url_for('site.index') }}">Back to home</a>
+        <a class="btn btn--outline" href="{{ url_for('site.brands') }}">Brands &amp; outlets</a>
+        <a class="btn btn--outline" href="{{ url_for('site.contact') }}">Contact us</a>
+      </div>
+    </div>
+  </section>
+{% endblock %}

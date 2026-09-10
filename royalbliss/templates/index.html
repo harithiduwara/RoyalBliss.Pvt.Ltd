@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon, feature_card, brand_card, steps_list %}
+
+{% block head_extra %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "{{ company.name }}",
+  "description": "{{ company.description }}",
+  "url": "{{ canonical_url('site.index') }}",
+  "logo": "{{ canonical_url('site.index') }}static/img/favicon.svg",
+  "email": "{{ contact.email }}",
+  "telephone": "{{ contact.phone_href }}",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "{{ contact.street }}",
+    "addressLocality": "{{ company.locality }}",
+    "addressCountry": "{{ company.country_code }}"
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero__inner">
+        <div>
+          <span class="hero__badge">{{ company.tagline }}</span>
+          <h1>Great brands deserve <em>great operators</em>.</h1>
+          <p>{{ company.name }} builds and runs food and beverage outlets on behalf of the brands we are proud to franchise &mdash; holding every cup, plate and counter to the standard the brand owner intended.</p>
+          <div class="btn-row">
+            <a class="btn btn--gold" href="{{ url_for('site.franchise') }}">Partner With Us</a>
+            <a class="btn btn--ghost" href="{{ url_for('site.brands') }}">See Our Brands</a>
+          </div>
+        </div>
+        <div class="hero__art">
+          <div class="hero__panel">
+            <h3>What we bring to a brand</h3>
+            <ul class="hero__list">
+              {% for promise in hero_promises %}
+              <li>{{ icon('check', 16, '#e8d59a', 2.4) }}<span>{{ promise }}</span></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="wrap">
+      <div class="stats__grid">
+        {% for stat in stats %}
+        <div class="stat"><div class="stat__num">{{ stat.value }}</div><span class="stat__label">{{ stat.label }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="center measure reveal">
+        <span class="eyebrow">What We Do</span>
+        <h2>A franchise partner that runs the business, not just the sign</h2>
+        <p class="lede">We take on the operating side of a food and beverage brand &mdash; the people, the kitchen, the supply chain and the numbers &mdash; so the brand shows up the same way every single day.</p>
+      </div>
+      <div class="grid grid--3" style="margin-top:52px">
+        {% for service in services %}{{ feature_card(service) }}{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tint">
+    <div class="wrap">
+      <div class="split">
+        <div class="split__media reveal" aria-hidden="true">
+          <svg width="220" height="220" viewBox="0 0 200 200" fill="none" stroke="#e8d59a" stroke-width="2.2">
+            <circle cx="100" cy="100" r="72" stroke="rgba(232,213,154,.35)"/>
+            <circle cx="100" cy="100" r="54"/>
+            <path d="M100 62c-14 12-20 24-20 34a20 20 0 0040 0c0-10-6-22-20-34z" fill="rgba(232,213,154,.18)"/>
+            <path d="M68 128h64M76 140h48"/>
+          </svg>
+        </div>
+        <div class="reveal">
+          <span class="eyebrow">Who We Are</span>
+          <h2>Operators first, franchisees by choice</h2>
+          <p>{{ company.name }} was founded by hospitality operators who believe a franchise agreement is a promise to a guest, not a paperwork exercise. We chose the franchise model because it lets us pair proven brands and proven systems with people on the ground who genuinely care about the shift they are running.</p>
+          <p>Every outlet we operate is measured on the same three things: the product leaving the pass, the experience at the counter, and the condition of the kitchen behind it. Everything else follows from those.</p>
+          <a class="btn btn--outline" href="{{ url_for('site.about') }}">More about our story</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="center measure reveal">
+        <span class="eyebrow">Our Portfolio</span>
+        <h2>The formats we operate</h2>
+        <p class="lede">From high-turnover quick service to unhurried specialty coffee, each format has its own rhythm &mdash; and its own operating discipline.</p>
+      </div>
+      <div class="grid grid--3" style="margin-top:52px">
+        {% for item in formats %}{{ brand_card(item, item.title) }}{% endfor %}
+      </div>
+      <div class="btn-row center" style="margin-top:44px">
+        <a class="btn btn--primary" href="{{ url_for('site.brands') }}">View brands &amp; outlets</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--dark">
+    <div class="wrap">
+      <div class="center measure reveal">
+        <span class="eyebrow">Why Brand Owners Work With Us</span>
+        <h2>Predictable execution in every location</h2>
+        <p class="lede">Awarding a territory is an act of trust. These are the commitments we make in return.</p>
+      </div>
+      <div class="grid grid--4" style="margin-top:52px">
+        {% for item in why_us %}{{ feature_card(item) }}{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tint">
+    <div class="wrap">
+      <div class="split split--reverse">
+        <div class="split__media reveal" aria-hidden="true" style="background:linear-gradient(145deg,#8a2145,#4a0f27)">
+          <svg width="210" height="210" viewBox="0 0 200 200" fill="none" stroke="#e8d59a" stroke-width="2.2">
+            <rect x="42" y="52" width="116" height="96" rx="10" stroke="rgba(232,213,154,.4)"/>
+            <path d="M42 82h116M62 68h6M78 68h6"/>
+            <path d="M66 106h30M66 122h48M112 96h34" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="reveal">
+          <span class="eyebrow">How We Work</span>
+          <h2>From signed agreement to opening day</h2>
+          {{ steps_list(steps) }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-band reveal">
+        <h2>Looking for a franchise partner in our market?</h2>
+        <p>Whether you are a brand owner exploring the region, a landlord with the right site, or a supplier who meets our standards &mdash; we would like to hear from you.</p>
+        <div class="btn-row center" style="margin-top:26px">
+          <a class="btn btn--gold" href="{{ url_for('site.contact') }}#enquiry">Start a conversation</a>
+          <a class="btn btn--ghost" href="{{ url_for('site.franchise') }}">Partnership options</a>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
