@@ -1,0 +1,2 @@
+statement_id,page_refs,period_start,period_end,opening_balance,closing_balance,total_debits,total_credits
+SAMPLE-01,SAMPLE-PAGE-1,2026-01-05,2026-02-28,0.00,200000.00,1085000.00,1285000.00

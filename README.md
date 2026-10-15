@@ -46,6 +46,67 @@ tests/test_site.py          route + build smoke tests
 
 ---
 
+## Cash tracker, analyser and dashboard
+
+A second, separate tool lives in `finance/`. It reads the company bank ledger,
+reconciles it against the statements, and renders a dashboard.
+
+**It is never published.** The repository is public, so the real ledger and the
+rendered dashboard are git-ignored and the tracker is deliberately not part of
+the Flask app — see [ADR 002](docs/adr/002-dashboard-is-never-published.md). A
+test enforces it.
+
+```bash
+python -m finance.cli check      # does the ledger agree with the bank?
+python -m finance.cli analyse    # cash summary in the terminal
+python -m finance.cli report     # dashboard -> build-finance/index.html
+python -m finance.cli add --date 2026-10-20 --amount 150000 \
+    --category transfer_in --particulars "VSRTFR-Harith" --counterparty Harith
+```
+
+With no `data/transactions.csv` present it falls back to the committed
+synthetic sample, so a fresh clone runs. Standard library only — no extra
+dependencies.
+
+### Reconciliation
+
+Three independent checks, because each catches what the others cannot:
+
+| Check | Catches |
+|---|---|
+| Running balance | A mistyped amount on one row |
+| Statement control totals | A whole row dropped or duplicated |
+| Period continuity | An entire statement missing |
+
+`check` exits non-zero when any fails, and `analyse`/`report` label their output
+provisional rather than quietly presenting figures that do not tie to the bank.
+
+### The ledger
+
+`data/README.md` documents every column. The rule that matters: `balance` is
+**the balance the bank printed**, never a computed one — that is what makes
+reconciliation a real check. Amounts are positive in both columns; direction
+comes from which column holds the amount.
+
+---
+
+## Role skills
+
+`.claude/skills/` holds five skills that give Claude the right standards when
+working on this project:
+
+| Skill | Use it for |
+|---|---|
+| `financial-analyst` | Cash flow, runway, funding mix, interpreting the numbers |
+| `accountant` | Classifying transactions, reconciliation, Sri Lankan compliance |
+| `business-analyst` | Turning vague asks into specified, testable requirements |
+| `software-architect` | Where code goes, what may be published, ADRs |
+| `uiux-expert` | Dashboards, charts, money formatting, accessibility |
+
+They trigger automatically when a request matches, or can be invoked by name.
+
+---
+
 ## Running it locally
 
 ```bash
