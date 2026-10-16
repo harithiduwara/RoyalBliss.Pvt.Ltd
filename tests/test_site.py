@@ -1,8 +1,11 @@
 """Smoke tests: every page renders, and the static build contains what Pages needs."""
 
+from pathlib import Path
+
 import pytest
 from flask_frozen import Freezer
 
+from finance.ledger import load_transactions
 from royalbliss import create_app
 from royalbliss.views import SITEMAP_ENDPOINTS
 
@@ -107,12 +110,31 @@ def test_frozen_site_contains_no_ledger_data(tmp_path):
     })
     Freezer(app).freeze()
 
-    forbidden = ["011711004454", "sampath", "cash tracker", "reconcil", "ledger"]
+    # Generic markers only. The account number and counterparty names are
+    # deliberately NOT written here: this repository is public, so a test that
+    # hardcoded them to prove they never leak would itself be the leak. Where a
+    # real ledger is present, the values to look for are read from it instead.
+    forbidden = ["sampath", "cash tracker", "reconcil", "ledger"]
+
+    # Counterparty names, statement ids and balances — the values that actually
+    # identify this ledger. Particulars are skipped on purpose: "CASH" is a
+    # particulars value and also an ordinary English word in the site copy, so
+    # guarding on it would fail on marketing text rather than on a real leak.
+    real_ledger = Path(__file__).resolve().parent.parent / "data" / "transactions.csv"
+    if real_ledger.exists():
+        for transaction in load_transactions(real_ledger):
+            if transaction.counterparty and len(transaction.counterparty) > 3:
+                forbidden.append(transaction.counterparty.lower())
+            if transaction.statement_id:
+                forbidden.append(transaction.statement_id.lower())
+            if transaction.balance:
+                forbidden.append(f"{transaction.balance:,.2f}")
+
     for path in tmp_path.rglob("*"):
         if not path.is_file():
             continue
         text = path.read_text(encoding="utf-8", errors="ignore").lower()
-        for needle in forbidden:
+        for needle in set(forbidden):
             assert needle not in text, f"{needle!r} leaked into the published site at {path}"
 
 
