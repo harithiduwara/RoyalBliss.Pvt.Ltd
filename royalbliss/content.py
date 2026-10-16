@@ -20,14 +20,21 @@ COMPANY = {
         "Royal Bliss (Pvt) Ltd is a food and beverage franchise operator running "
         "restaurant, café and beverage outlets to international brand standards."
     ),
-    "registration": "Registered in Sri Lanka · Company No. PV 00000000",  # EDIT
+    # From the Certificate of Incorporation (Form 2A), Registrar General of
+    # Companies: incorporated in Colombo on 16 April 2026 under the Companies
+    # Act No. 7 of 2007.
+    "registration": "Registered in Sri Lanka · Company No. PV 00361724",
+    "incorporated": "16 April 2026",
     "country_code": "LK",
     "locality": "Colombo",
 }
 
 CONTACT = {
-    "address_lines": ["No. 00, Example Avenue", "Colombo 00, Sri Lanka"],  # EDIT
-    "street": "No. 00, Example Avenue",
+    # CONFIRM: taken from the address Sampath Bank sends statements to, not
+    # from the Certificate of Incorporation (Form 2A does not carry one).
+    # Check it matches the registered office before relying on it.
+    "address_lines": ["No. 58/10, 4th Lane", "D M Colombage Mawatha", "Colombo 5, Sri Lanka"],
+    "street": "No. 58/10, 4th Lane, D M Colombage Mawatha",
     "phone_display": "+94 11 000 0000",  # EDIT
     "phone_href": "+94110000000",
     "email": "hello@royalbliss.lk",  # EDIT
@@ -65,7 +72,7 @@ STATS = [  # EDIT: real figures
     {"value": "00", "label": "Outlets Operated"},
     {"value": "00", "label": "Brands Franchised"},
     {"value": "000+", "label": "Team Members"},
-    {"value": "0000", "label": "Year Established"},
+    {"value": "2026", "label": "Year Established"},
 ]
 
 SERVICES = [

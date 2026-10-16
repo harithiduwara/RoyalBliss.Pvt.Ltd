@@ -254,18 +254,21 @@ search it for `EDIT`.
 |---|---|---|
 | `+94 11 000 0000` | `CONTACT`, `OUTLETS` | Real phone numbers (update `phone_href` too) |
 | `hello@royalbliss.lk`, `partnerships@…`, `careers@…` | `CONTACT` | Real mailboxes |
-| `No. 00, Example Avenue, Colombo 00` | `CONTACT` | Registered office address |
-| `Company No. PV 00000000` | `COMPANY["registration"]` | Company registration number |
-| `00`, `000+`, `0000` | `STATS` | Outlet count, brand count, headcount, year founded |
+| `00`, `000+` | `STATS` | Outlet count, brand count, headcount |
 | `Brand Name One / Two / Three` | `BRANDS` | The brands you actually franchise |
 | Outlet rows | `OUTLETS` | Real outlets, addresses, hours, phones |
 | “Name to be added” | `LEADERSHIP` | Names and titles |
 | `"url": "#"` | `SOCIALS` | Facebook / Instagram / LinkedIn URLs |
 | Map placeholder box | `templates/contact.html` | Google Maps embed `<iframe>` |
 
-> **Note on the country:** the site assumes Sri Lanka (`.lk` addresses, `+94` dialling code,
-> `PV` company number format), inferred from the “(Pvt) Ltd” company form. If Royal Bliss is
-> registered elsewhere, update `COMPANY` and `CONTACT` accordingly.
+### Already filled in from source documents
+
+| Detail | Value | Source |
+|---|---|---|
+| Company number | PV 00361724 | Certificate of Incorporation (Form 2A) |
+| Incorporated | 16 April 2026, Colombo, under the Companies Act No. 7 of 2007 | Certificate of Incorporation |
+| Year established | 2026 | Certificate of Incorporation |
+| Address | No. 58/10, 4th Lane, D M Colombage Mawatha, Colombo 5 | **Sampath Bank statement header — confirm it matches the registered office**, as Form 2A does not carry an address |
 
 ---
 
