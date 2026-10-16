@@ -1,0 +1,12 @@
+date,statement_id,branch,particulars,counterparty,instrument,reference,debit,credit,balance,category,needs_review,note
+2026-01-05,SAMPLE-01,KIRULAPO,INITIAL DEPOSIT,,DEPOSIT,,,50000.00,50000.00,opening_deposit,,
+2026-01-05,SAMPLE-01,KIRULAPO,CHQBKCHG,,CHARGE,,1500.00,,48500.00,bank_charge,,Cheque book charge
+2026-01-12,SAMPLE-01,CITY,VSRTFR-Partner A,Partner A,VSRTFR,,,250000.00,298500.00,transfer_in,,
+2026-01-12,SAMPLE-01,KANDY SU,VSRTFR-Partner B,Partner B,VSRTFR,,,250000.00,548500.00,transfer_in,,
+2026-01-20,SAMPLE-01,MAHARAGA,CASH,,CASH,,,125000.00,673500.00,cash_in,,
+2026-01-22,SAMPLE-01,H/O,CHQ 1,,CHQ_OUT,1,400000.00,,273500.00,cheque_out,,Equipment supplier
+2026-02-02,SAMPLE-01,NAWALA,CHQ 455001,,CHQ_IN,455001,,310000.00,583500.00,cheque_in,,
+2026-02-10,SAMPLE-01,KIRULAPO,CACHQ 2,,CACHQ,2,500000.00,,83500.00,cash_cheque_out,yes,Counter cash — voucher needed
+2026-02-18,SAMPLE-01,CITY,VSRTFR-Partner A,Partner A,VSRTFR,,,300000.00,383500.00,transfer_in,,
+2026-02-25,SAMPLE-01,KARAGAMP,TrCHQ 4,,TRCHQ,4,150000.00,,233500.00,transfer_cheque_out,,
+2026-02-28,SAMPLE-01,H/O,CHQ 5,,CHQ_OUT,5,33500.00,,200000.00,cheque_out,,

@@ -46,6 +46,124 @@ tests/test_site.py          route + build smoke tests
 
 ---
 
+## Cash tracker, analyser and dashboard
+
+A second, separate tool lives in `finance/`. It reads the company bank ledger,
+reconciles it against the statements, and renders a dashboard.
+
+**It is never published.** The repository is public, so the real ledger and the
+rendered dashboard are git-ignored and the tracker is deliberately not part of
+the Flask app — see [ADR 002](docs/adr/002-dashboard-is-never-published.md). A
+test enforces it.
+
+```bash
+python -m finance.cli check      # does the ledger agree with the bank?
+python -m finance.cli analyse    # cash summary in the terminal
+python -m finance.cli classify   # apply classification rules
+python -m finance.cli export     # .xlsx workbook
+python -m finance.cli report     # dashboard -> build-finance/index.html
+python -m finance.cli add --date 2026-10-20 --amount 150000 \
+    --category transfer_in --particulars "VSRTFR-Harith" --counterparty Harith
+```
+
+### Classifying transactions
+
+New rows can be entered as `unclassified` and resolved later, so recording that
+a movement happened never waits on knowing what it was for.
+
+`data/rules.csv` holds the rules (copy `rules.sample.csv` to start). Each rule
+matches on a field and sets a category, a counterparty, or both:
+
+```csv
+match_field,pattern,category,counterparty,note
+particulars,vihanga,transfer_in,Vihangawe,Covers every spelling of the name
+instrument,CACHQ,cash_cheque_out,,Counter cash — a voucher is required
+particulars,re:^VSRTFR,transfer_in,,Prefix with re: for a regular expression
+```
+
+Patterns are case-insensitive substrings unless prefixed `re:`. Rules are tried
+in order and the first match wins, so put the specific ones first.
+
+```bash
+python -m finance.cli classify                        # preview — writes nothing
+python -m finance.cli classify --apply                # save it
+python -m finance.cli classify --all --apply          # revisit settled rows too
+python -m finance.cli classify --row 42 --category cheque_out --apply
+```
+
+Two things it will not do. It never changes a row that already has a category
+unless you pass `--all` (it will still fill a blank counterparty, which is
+additive). And no rule or override can mark a payment as a receipt — direction
+comes from the column the bank put the amount in, so a rule that disagrees is
+reported and skipped rather than applied.
+
+### Grouping
+
+Seven dimensions: `counterparty`, `category`, `month`, `week`, `branch`,
+`instrument`, `direction`.
+
+```bash
+python -m finance.cli analyse --group-by branch instrument
+```
+
+The dashboard renders all seven and switches between them with the buttons
+above the breakdown. Every panel is real HTML in the page, so it still reads
+correctly with JavaScript off.
+
+### Excel export
+
+`export` writes a genuine `.xlsx` — typed date and currency cells, frozen
+header row, autofilter — with a Summary sheet, every transaction, one sheet per
+grouping, and the cheque register. No third-party library: an xlsx is a zip of
+XML, so the standard library writes it.
+
+The dashboard embeds that same workbook, so the **Download Excel workbook**
+button at the top works straight from the local file with nothing installed.
+Pass `--no-excel` to `report` to leave it out and halve the page size.
+
+With no `data/transactions.csv` present it falls back to the committed
+synthetic sample, so a fresh clone runs. Standard library only — no extra
+dependencies.
+
+### Reconciliation
+
+Three independent checks, because each catches what the others cannot:
+
+| Check | Catches |
+|---|---|
+| Running balance | A mistyped amount on one row |
+| Statement control totals | A whole row dropped or duplicated |
+| Period continuity | An entire statement missing |
+
+`check` exits non-zero when any fails, and `analyse`/`report` label their output
+provisional rather than quietly presenting figures that do not tie to the bank.
+
+### The ledger
+
+`data/README.md` documents every column. The rule that matters: `balance` is
+**the balance the bank printed**, never a computed one — that is what makes
+reconciliation a real check. Amounts are positive in both columns; direction
+comes from which column holds the amount.
+
+---
+
+## Role skills
+
+`.claude/skills/` holds five skills that give Claude the right standards when
+working on this project:
+
+| Skill | Use it for |
+|---|---|
+| `financial-analyst` | Cash flow, runway, funding mix, interpreting the numbers |
+| `accountant` | Classifying transactions, reconciliation, Sri Lankan compliance |
+| `business-analyst` | Turning vague asks into specified, testable requirements |
+| `software-architect` | Where code goes, what may be published, ADRs |
+| `uiux-expert` | Dashboards, charts, money formatting, accessibility |
+
+They trigger automatically when a request matches, or can be invoked by name.
+
+---
+
 ## Running it locally
 
 ```bash
@@ -136,18 +254,21 @@ search it for `EDIT`.
 |---|---|---|
 | `+94 11 000 0000` | `CONTACT`, `OUTLETS` | Real phone numbers (update `phone_href` too) |
 | `hello@royalbliss.lk`, `partnerships@…`, `careers@…` | `CONTACT` | Real mailboxes |
-| `No. 00, Example Avenue, Colombo 00` | `CONTACT` | Registered office address |
-| `Company No. PV 00000000` | `COMPANY["registration"]` | Company registration number |
-| `00`, `000+`, `0000` | `STATS` | Outlet count, brand count, headcount, year founded |
+| `00`, `000+` | `STATS` | Outlet count, brand count, headcount |
 | `Brand Name One / Two / Three` | `BRANDS` | The brands you actually franchise |
 | Outlet rows | `OUTLETS` | Real outlets, addresses, hours, phones |
 | “Name to be added” | `LEADERSHIP` | Names and titles |
 | `"url": "#"` | `SOCIALS` | Facebook / Instagram / LinkedIn URLs |
 | Map placeholder box | `templates/contact.html` | Google Maps embed `<iframe>` |
 
-> **Note on the country:** the site assumes Sri Lanka (`.lk` addresses, `+94` dialling code,
-> `PV` company number format), inferred from the “(Pvt) Ltd” company form. If Royal Bliss is
-> registered elsewhere, update `COMPANY` and `CONTACT` accordingly.
+### Already filled in from source documents
+
+| Detail | Value | Source |
+|---|---|---|
+| Company number | PV 00361724 | Certificate of Incorporation (Form 2A) |
+| Incorporated | 16 April 2026, Colombo, under the Companies Act No. 7 of 2007 | Certificate of Incorporation |
+| Year established | 2026 | Certificate of Incorporation |
+| Address | No. 58/10, 4th Lane, D M Colombage Mawatha, Colombo 5 | **Sampath Bank statement header — confirm it matches the registered office**, as Form 2A does not carry an address |
 
 ---
 

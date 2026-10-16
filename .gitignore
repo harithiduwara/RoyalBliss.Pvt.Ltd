@@ -5,3 +5,10 @@ __pycache__/
 venv/
 .pytest_cache/
 .DS_Store
+
+# Company bank data — the repository is public. Keep the real ledger and the
+# rendered finance dashboard out of it. See .claude/skills/software-architect.
+data/transactions.csv
+data/statements.csv
+data/rules.csv
+build-finance/

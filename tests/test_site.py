@@ -89,3 +89,36 @@ def test_freeze_writes_the_files_pages_needs(tmp_path):
     ]
     for relative in expected:
         assert (tmp_path / relative).is_file(), f"missing from build: {relative}"
+
+
+def test_frozen_site_contains_no_ledger_data(tmp_path):
+    """The published site must never carry company bank data.
+
+    ADR 002 keeps the tracker out of the Flask app so the freezer cannot reach
+    it. This asserts that boundary holds, because the failure mode — publishing
+    the company's bank account to a public URL — is not one to discover later.
+    """
+    base = "https://example.test/"
+    app = create_app({
+        "SITE_BASE_URL": base,
+        "FREEZER_DESTINATION": str(tmp_path),
+        "FREEZER_BASE_URL": base,
+        "FREEZER_REMOVE_EXTRA_FILES": True,
+    })
+    Freezer(app).freeze()
+
+    forbidden = ["011711004454", "sampath", "cash tracker", "reconcil", "ledger"]
+    for path in tmp_path.rglob("*"):
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore").lower()
+        for needle in forbidden:
+            assert needle not in text, f"{needle!r} leaked into the published site at {path}"
+
+
+def test_finance_package_is_not_registered_on_the_app():
+    """No finance route can exist, or the freezer would publish it."""
+    app = create_app({"TESTING": True})
+    for rule in app.url_map.iter_rules():
+        assert "finance" not in rule.endpoint
+        assert "ledger" not in str(rule)
