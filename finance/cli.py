@@ -3,6 +3,8 @@
     python -m finance.cli check              reconcile against the bank
     python -m finance.cli analyse            print the cash summary
     python -m finance.cli add [...]          append a transaction
+    python -m finance.cli classify           apply classification rules
+    python -m finance.cli export             write an .xlsx workbook
     python -m finance.cli report             render the HTML dashboard
 """
 
@@ -15,10 +17,11 @@ from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 
-from .analyse import analyse
+from .analyse import GROUPINGS, analyse, group
 from .ledger import CATEGORIES, FIELDS, INFLOW_CATEGORIES, LedgerError, load, load_transactions
 from .money import ZERO, fmt, fmt_short, parse_money
 from .reconcile import reconcile
+from .rules import Change, Rule, apply_changes, load_rules, plan
 
 DATA_DIR = Path("data")
 OUTPUT_DIR = Path("build-finance")
@@ -98,9 +101,23 @@ def cmd_analyse(args) -> int:
                 f"{fmt(bucket.outflow):>16}{fmt(bucket.net):>16}"
             )
 
-    table("Funding and payments by counterparty", result.by_counterparty)
-    table("By category", result.by_category)
-    table("By month", result.by_month, limit=24)
+    for dimension in args.group_by:
+        label = {
+            "counterparty": "Funding and payments by counterparty",
+            "category": "By category",
+            "month": "By month",
+            "week": "By week",
+            "branch": "By branch or channel",
+            "instrument": "By instrument",
+            "direction": "By direction",
+        }[dimension]
+        table(label, result.groups[dimension], limit=30)
+
+    if result.unclassified:
+        print(
+            f"\n  {len(result.unclassified)} row(s) still unclassified. "
+            "Run `classify` to apply the rules in data/rules.csv."
+        )
 
     if result.largest_out:
         print("\n  Largest payments")
@@ -175,6 +192,108 @@ def cmd_add(args) -> int:
     return 0
 
 
+def cmd_classify(args) -> int:
+    """Apply classification rules. Shows the diff first; writes only on --apply."""
+    path = _ledger_path(args.data_dir)
+    transactions = load_transactions(path)
+
+    if args.row is not None:
+        # A manual override is the one case that needs no rules file at all.
+        # Manual override for one row, for the cases no rule should encode.
+        target = next((t for t in transactions if t.row_number == args.row), None)
+        if target is None:
+            print(f"No row {args.row} in {path}.", file=sys.stderr)
+            return 2
+        if args.category and args.category not in CATEGORIES:
+            print(f"Unknown category {args.category!r}.", file=sys.stderr)
+            return 2
+        # The same guard the rules engine applies: the bank decides whether a
+        # row is money in or out, and no manual override gets to contradict it.
+        # Without this you can write a ledger that will not load next time.
+        if args.category and args.category != "unclassified":
+            if (args.category in INFLOW_CATEGORIES) != target.is_inflow:
+                print(
+                    f"Row {args.row} is money {'in' if target.is_inflow else 'out'} "
+                    f"({fmt(target.credit or target.debit)}), so it cannot be "
+                    f"{args.category!r}. Pick a category on the same side.",
+                    file=sys.stderr,
+                )
+                return 2
+        manual = Rule("any", "", args.category or "", args.counterparty or "", "manual")
+        change = Change(target, manual, args.category or None, args.counterparty or None)
+        print(f"row {args.row}  {target.date}  {target.particulars}")
+        print(f"  {change.describe()}")
+        if not args.apply:
+            print("\nNothing written. Re-run with --apply to save.")
+            return 0
+        apply_changes(path, [change])
+        print("\nSaved.")
+        return 0
+
+    rules_path = args.rules or (args.data_dir / "rules.csv")
+    if not Path(rules_path).exists():
+        fallback = args.data_dir / "rules.sample.csv"
+        if not fallback.exists():
+            print(
+                f"No rules file at {rules_path}. Copy data/rules.sample.csv to it "
+                "and edit it, or classify one row at a time with --row.",
+                file=sys.stderr,
+            )
+            return 2
+        rules_path = fallback
+        print(f"No {args.data_dir / 'rules.csv'} — using the sample rules instead.\n")
+
+    rules = load_rules(rules_path)
+    changes, warnings = plan(transactions, rules, reclassify_all=args.all)
+
+    print(f"Ledger: {path}  ({len(transactions)} transactions)")
+    print(f"Rules:  {rules_path}  ({len(rules)} rules)")
+    print(RULE)
+    if warnings:
+        print("Rules that could not be applied:")
+        for warning in warnings:
+            print(f"  ! {warning}")
+        print()
+    if not changes:
+        print("No changes — every row already matches the rules.")
+        return 0
+
+    print(f"{len(changes)} row(s) would change:\n")
+    for change in changes[:40]:
+        tx = change.transaction
+        print(f"  row {tx.row_number:>3}  {tx.date}  {tx.particulars[:30]:<30} {change.describe()}")
+    if len(changes) > 40:
+        print(f"  … and {len(changes) - 40} more")
+
+    if not args.apply:
+        print("\nNothing written. Re-run with --apply to save these to the ledger.")
+        return 0
+
+    written = apply_changes(path, changes)
+    print(f"\nSaved {written} row(s) to {path}.")
+    print("Run `check` to confirm the ledger still reconciles.")
+    return 0
+
+
+def cmd_export(args) -> int:
+    from .excel import write_workbook
+    from .exporting import sheets_for
+
+    ledger = load(args.data_dir)
+    report = reconcile(ledger)
+    result = analyse(ledger)
+
+    write_workbook(args.output, sheets_for(ledger, result, report))
+    print(f"Workbook written to {args.output}")
+    if not report.ok:
+        print("⚠ The ledger does not reconcile — the Summary sheet says why.")
+    print(
+        "\nContains company bank data. Written to a git-ignored directory on "
+        "purpose — do not commit it."
+    )
+    return 0 if report.ok else 1
+
+
 def cmd_report(args) -> int:
     from .report import render  # imported here so `check` has no HTML dependency
 
@@ -182,8 +301,15 @@ def cmd_report(args) -> int:
     report = reconcile(ledger)
     result = analyse(ledger)
 
+    workbook = None
+    if not args.no_excel:
+        from .excel import build_workbook
+        from .exporting import sheets_for
+
+        workbook = build_workbook(sheets_for(ledger, result, report))
+
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(render(result, report), encoding="utf-8")
+    args.output.write_text(render(result, report, workbook), encoding="utf-8")
 
     print(f"Dashboard written to {args.output}")
     print(_ledger_path(args.data_dir).name, f"— {len(ledger)} transactions")
@@ -208,7 +334,26 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("check", help="reconcile the ledger against the bank").set_defaults(
         func=cmd_check
     )
-    sub.add_parser("analyse", help="print the cash summary").set_defaults(func=cmd_analyse)
+    ana = sub.add_parser("analyse", help="print the cash summary")
+    ana.add_argument(
+        "--group-by", nargs="+", choices=sorted(GROUPINGS),
+        default=["counterparty", "category", "month"],
+        help="dimensions to break the totals down by",
+    )
+    ana.set_defaults(func=cmd_analyse)
+
+    cls = sub.add_parser("classify", help="apply classification rules to the ledger")
+    cls.add_argument("--rules", type=Path, help="rules file (default data/rules.csv)")
+    cls.add_argument("--apply", action="store_true", help="write the changes (default: preview only)")
+    cls.add_argument("--all", action="store_true", help="also reclassify rows that already have a category")
+    cls.add_argument("--row", type=int, help="classify one row by its line number instead of using rules")
+    cls.add_argument("--category", choices=sorted(CATEGORIES), help="category for --row")
+    cls.add_argument("--counterparty", help="counterparty for --row")
+    cls.set_defaults(func=cmd_classify)
+
+    exp = sub.add_parser("export", help="export the ledger and groupings to .xlsx")
+    exp.add_argument("--output", type=Path, default=OUTPUT_DIR / "royal-bliss-cash.xlsx")
+    exp.set_defaults(func=cmd_export)
 
     add = sub.add_parser("add", help="append a transaction to the ledger")
     add.add_argument("--date", required=True, help="YYYY-MM-DD")
@@ -226,6 +371,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     rep = sub.add_parser("report", help="render the HTML dashboard")
     rep.add_argument("--output", type=Path, default=OUTPUT_DIR / "index.html")
+    rep.add_argument(
+        "--no-excel", action="store_true",
+        help="skip the embedded workbook (smaller file, no download button)",
+    )
     rep.set_defaults(func=cmd_report)
     return parser
 

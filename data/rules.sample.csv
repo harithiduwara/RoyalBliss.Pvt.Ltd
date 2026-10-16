@@ -1,0 +1,12 @@
+match_field,pattern,category,counterparty,note
+particulars,CHQBKCHG,bank_charge,,Cheque book charge
+particulars,S/CHG,bank_charge,,Service charge
+particulars,INITIAL DEPOSIT,opening_deposit,,
+instrument,CACHQ,cash_cheque_out,,Counter cash — needs a voucher
+instrument,TRCHQ,transfer_cheque_out,,
+instrument,CHQ_OUT,cheque_out,,
+instrument,CHQ_IN,cheque_in,,
+instrument,CASH,cash_in,,
+particulars,VSRTFR-Partner A,transfer_in,Partner A,
+particulars,VSRTFR-Partner B,transfer_in,Partner B,
+particulars,re:^VSRTFR,transfer_in,,"Any other bank transfer in. Prefix a pattern with re: for a regular expression; otherwise it is a case-insensitive substring."

@@ -59,10 +59,67 @@ test enforces it.
 ```bash
 python -m finance.cli check      # does the ledger agree with the bank?
 python -m finance.cli analyse    # cash summary in the terminal
+python -m finance.cli classify   # apply classification rules
+python -m finance.cli export     # .xlsx workbook
 python -m finance.cli report     # dashboard -> build-finance/index.html
 python -m finance.cli add --date 2026-10-20 --amount 150000 \
     --category transfer_in --particulars "VSRTFR-Harith" --counterparty Harith
 ```
+
+### Classifying transactions
+
+New rows can be entered as `unclassified` and resolved later, so recording that
+a movement happened never waits on knowing what it was for.
+
+`data/rules.csv` holds the rules (copy `rules.sample.csv` to start). Each rule
+matches on a field and sets a category, a counterparty, or both:
+
+```csv
+match_field,pattern,category,counterparty,note
+particulars,vihanga,transfer_in,Vihangawe,Covers every spelling of the name
+instrument,CACHQ,cash_cheque_out,,Counter cash — a voucher is required
+particulars,re:^VSRTFR,transfer_in,,Prefix with re: for a regular expression
+```
+
+Patterns are case-insensitive substrings unless prefixed `re:`. Rules are tried
+in order and the first match wins, so put the specific ones first.
+
+```bash
+python -m finance.cli classify                        # preview — writes nothing
+python -m finance.cli classify --apply                # save it
+python -m finance.cli classify --all --apply          # revisit settled rows too
+python -m finance.cli classify --row 42 --category cheque_out --apply
+```
+
+Two things it will not do. It never changes a row that already has a category
+unless you pass `--all` (it will still fill a blank counterparty, which is
+additive). And no rule or override can mark a payment as a receipt — direction
+comes from the column the bank put the amount in, so a rule that disagrees is
+reported and skipped rather than applied.
+
+### Grouping
+
+Seven dimensions: `counterparty`, `category`, `month`, `week`, `branch`,
+`instrument`, `direction`.
+
+```bash
+python -m finance.cli analyse --group-by branch instrument
+```
+
+The dashboard renders all seven and switches between them with the buttons
+above the breakdown. Every panel is real HTML in the page, so it still reads
+correctly with JavaScript off.
+
+### Excel export
+
+`export` writes a genuine `.xlsx` — typed date and currency cells, frozen
+header row, autofilter — with a Summary sheet, every transaction, one sheet per
+grouping, and the cheque register. No third-party library: an xlsx is a zip of
+XML, so the standard library writes it.
+
+The dashboard embeds that same workbook, so the **Download Excel workbook**
+button at the top works straight from the local file with nothing installed.
+Pass `--no-excel` to `report` to leave it out and halve the page size.
 
 With no `data/transactions.csv` present it falls back to the committed
 synthetic sample, so a fresh clone runs. Standard library only — no extra

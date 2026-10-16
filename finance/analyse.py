@@ -59,6 +59,8 @@ class Analysis:
     balance_series: list[tuple[date, Decimal]] = field(default_factory=list)
     largest_out: list[Transaction] = field(default_factory=list)
     largest_in: list[Transaction] = field(default_factory=list)
+    groups: dict[str, list[Bucket]] = field(default_factory=dict)
+    unclassified: list[Transaction] = field(default_factory=list)
     cheques: list[ChequeEntry] = field(default_factory=list)
     repeated_amounts: list[tuple[Decimal, list[Transaction]]] = field(default_factory=list)
 
@@ -102,6 +104,61 @@ def _month_key(day: date) -> str:
     return f"{day.year:04d}-{day.month:02d}"
 
 
+def _week_key(day: date) -> str:
+    year, week, _ = day.isocalendar()
+    return f"{year:04d}-W{week:02d}"
+
+
+# The dimensions a ledger can be sliced by. Each entry is the key to group on
+# and whether rows with no value for it still deserve a bucket: a payment with
+# no identified counterparty should not quietly join one called "" and get
+# counted as a person.
+GROUPINGS: dict[str, tuple] = {
+    "counterparty": (lambda t: t.counterparty, False),
+    "category": (lambda t: CATEGORIES.get(t.category, t.category), True),
+    "month": (lambda t: _month_key(t.date), True),
+    "week": (lambda t: _week_key(t.date), True),
+    "branch": (lambda t: t.branch, True),
+    "instrument": (lambda t: t.instrument, True),
+    "direction": (lambda t: "Money in" if t.is_inflow else "Money out", True),
+}
+
+# Dimensions whose keys are chronological, so they sort by key rather than size.
+CHRONOLOGICAL = {"month", "week"}
+
+
+def group(transactions: list[Transaction], dimension: str) -> list[Bucket]:
+    """Bucket transactions by one dimension.
+
+    Sorted by size for categorical dimensions (the biggest thing is what you
+    want to see first) and by key for time ones (a month series out of
+    chronological order is unreadable).
+    """
+    if dimension not in GROUPINGS:
+        raise ValueError(
+            f"unknown grouping {dimension!r}. Expected one of: "
+            f"{', '.join(sorted(GROUPINGS))}"
+        )
+    keyfunc, include_blank = GROUPINGS[dimension]
+
+    buckets: dict[str, Bucket] = {}
+    for tx in transactions:
+        key = keyfunc(tx) or ""
+        if not key:
+            if not include_blank:
+                continue
+            key = "(none recorded)"
+        bucket = buckets.setdefault(key, Bucket(key=key))
+        bucket.inflow += tx.credit
+        bucket.outflow += tx.debit
+        bucket.count += 1
+
+    result = list(buckets.values())
+    if dimension in CHRONOLOGICAL:
+        return sorted(result, key=lambda b: b.key)
+    return sorted(result, key=lambda b: b.inflow + b.outflow, reverse=True)
+
+
 def analyse(ledger: Ledger, *, top_n: int = 8) -> Analysis:
     result = Analysis(ledger=ledger)
     transactions = ledger.transactions
@@ -136,30 +193,13 @@ def analyse(ledger: Ledger, *, top_n: int = 8) -> Analysis:
     result.trough, result.trough_date = trough, trough_date
     result.peak, result.peak_date = peak, peak_date
 
-    def bucket_by(keyfunc, include_blank: bool = True) -> list[Bucket]:
-        buckets: dict[str, Bucket] = defaultdict(lambda: Bucket(key=""))
-        for tx in transactions:
-            key = keyfunc(tx)
-            if not key and not include_blank:
-                continue
-            bucket = buckets[key]
-            bucket.key = key
-            bucket.inflow += tx.credit
-            bucket.outflow += tx.debit
-            bucket.count += 1
-        return list(buckets.values())
-
-    result.by_counterparty = sorted(
-        bucket_by(lambda t: t.counterparty, include_blank=False),
-        key=lambda b: b.inflow + b.outflow,
-        reverse=True,
-    )
-    result.by_category = sorted(
-        bucket_by(lambda t: CATEGORIES.get(t.category, t.category)),
-        key=lambda b: b.inflow + b.outflow,
-        reverse=True,
-    )
-    result.by_month = sorted(bucket_by(lambda t: _month_key(t.date)), key=lambda b: b.key)
+    result.groups = {
+        dimension: group(transactions, dimension) for dimension in GROUPINGS
+    }
+    result.by_counterparty = result.groups["counterparty"]
+    result.by_category = result.groups["category"]
+    result.by_month = result.groups["month"]
+    result.unclassified = [t for t in transactions if t.category == "unclassified"]
 
     result.largest_out = sorted(
         (t for t in transactions if t.debit > 0), key=lambda t: t.debit, reverse=True

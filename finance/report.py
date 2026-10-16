@@ -11,11 +11,12 @@ never carried by colour alone.
 
 from __future__ import annotations
 
+import base64
 import html
 from datetime import date, datetime
 from decimal import Decimal
 
-from .analyse import Analysis, Bucket
+from .analyse import GROUPINGS, Analysis, Bucket
 from .money import ZERO, fmt, fmt_short
 from .reconcile import ReconciliationReport
 
@@ -186,6 +187,99 @@ def _ranked_bars(buckets: list[Bucket], *, width: int = 880, row_h: int = 34) ->
 # ---------------------------------------------------------------- blocks
 
 
+DIMENSION_LABELS = {
+    "counterparty": "Counterparty",
+    "category": "Category",
+    "month": "Month",
+    "week": "Week",
+    "branch": "Branch",
+    "instrument": "Instrument",
+    "direction": "In / out",
+}
+
+DIMENSION_NOTES = {
+    "counterparty": "Named people and entities only. These are contributions and "
+                    "payments, not customer revenue.",
+    "category": "What kind of movement it was, on the cash side.",
+    "month": "Calendar months across the whole period.",
+    "week": "ISO weeks — useful for spotting the rhythm of injections.",
+    "branch": "Which Sampath branch or channel the movement went through.",
+    "instrument": "Transfer, cheque, counter cash, deposit.",
+    "direction": "The simplest cut: everything in against everything out.",
+}
+
+
+def _grouping_block(analysis: Analysis) -> str:
+    """Every breakdown rendered up front, with buttons to switch between them.
+
+    Each panel is real HTML in the page rather than something JavaScript builds
+    on demand, so the page is complete and printable at rest, and still works
+    if the script does not run — the first panel is simply visible.
+    """
+    buttons, panels = [], []
+    for index, dimension in enumerate(GROUPINGS):
+        buckets = analysis.groups.get(dimension, [])
+        if not buckets:
+            continue
+        active = "is-active" if index == 0 else ""
+        buttons.append(
+            f'<button type="button" class="switch {active}" data-group="{dimension}" '
+            f'aria-pressed="{"true" if index == 0 else "false"}">'
+            f"{esc(DIMENSION_LABELS[dimension])}</button>"
+        )
+        panels.append(
+            f'<div class="panel" data-panel="{dimension}"{"" if index == 0 else " hidden"}>'
+            f'<p class="note">{esc(DIMENSION_NOTES[dimension])}</p>'
+            f"{_ranked_bars(buckets)}{_bucket_table(buckets, DIMENSION_LABELS[dimension])}"
+            "</div>"
+        )
+
+    if not panels:
+        return '<p class="empty">No transactions to group.</p>'
+
+    return (
+        '<div class="switcher" role="group" aria-label="Group the breakdown by">'
+        + "".join(buttons)
+        + "</div>"
+        + "".join(panels)
+    )
+
+
+def _download_block(workbook: bytes | None) -> str:
+    if not workbook:
+        return ""
+    encoded = base64.b64encode(workbook).decode("ascii")
+    mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    size = f"{len(workbook) / 1024:.0f} KB"
+    return (
+        '<a class="download" download="royal-bliss-cash.xlsx" '
+        f'href="data:{mime};base64,{encoded}">'
+        '<span aria-hidden="true">↓</span> Download Excel workbook'
+        f'<span class="download__size">{size}</span></a>'
+    )
+
+
+def _unclassified_block(analysis: Analysis) -> str:
+    if not analysis.unclassified:
+        return ""
+    rows = "".join(
+        f"<tr><td class='mono'>{esc(t.date)}</td><td>{esc(t.particulars)}</td>"
+        f"<td class='num'>{esc(fmt(t.debit or t.credit))}</td></tr>"
+        for t in analysis.unclassified[:20]
+    )
+    return f"""<section class="card">
+  <h2>Unclassified</h2>
+  <p class="note">{len(analysis.unclassified)} row(s) have no category yet, so they
+     are missing from the category breakdown. Run
+     <span class="mono">classify</span> to apply the rules, or set them by hand
+     in the ledger.</p>
+  <div class="scroll"><table>
+  <thead><tr><th scope="col">Date</th><th scope="col">Particulars</th>
+  <th scope="col" class="num">Amount (LKR)</th></tr></thead>
+  <tbody>{rows}</tbody></table></div>
+</section>"""
+
+
 def _status_block(report: ReconciliationReport) -> str:
     """Trust first: a reader must know whether these numbers tie to the bank."""
     if report.ok:
@@ -324,7 +418,11 @@ def _attention_block(analysis: Analysis, report: ReconciliationReport) -> str:
 # ---------------------------------------------------------------- page
 
 
-def render(analysis: Analysis, report: ReconciliationReport) -> str:
+def render(
+    analysis: Analysis,
+    report: ReconciliationReport,
+    workbook: bytes | None = None,
+) -> str:
     period = (
         f"{analysis.period_start} to {analysis.period_end}"
         if analysis.period_start
@@ -436,7 +534,23 @@ ul.plain {{ padding-left: 1.1em; font-size: .88rem; }}
 ul.plain li {{ margin-bottom: .45em; }}
 footer {{ margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border);
   color: var(--muted); font-size: .82rem; }}
+.switcher {{ display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 4px; }}
+.switch {{ font: inherit; font-size: .84rem; font-weight: 550; cursor: pointer;
+  padding: .45em .9em; border-radius: 999px; color: var(--ink-2);
+  background: transparent; border: 1px solid var(--border);
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease; }}
+.switch:hover {{ border-color: var(--in); color: var(--ink); }}
+.switch.is-active {{ background: var(--in); border-color: var(--in); color: #fff; }}
+.switch:focus-visible {{ outline: 2px solid var(--in); outline-offset: 2px; }}
+.download {{ display: inline-flex; align-items: center; gap: .6em; margin-top: 14px;
+  padding: .6em 1.1em; border-radius: 10px; text-decoration: none;
+  font-size: .88rem; font-weight: 600; color: #fff; background: var(--in);
+  border: 1px solid var(--in); }}
+.download:hover {{ filter: brightness(1.08); }}
+.download:focus-visible {{ outline: 2px solid var(--ink); outline-offset: 2px; }}
+.download__size {{ font-weight: 400; opacity: .75; font-variant-numeric: tabular-nums; }}
 @media (max-width: 640px) {{ .wrap {{ padding: 20px 14px 48px; }} }}
+@media (prefers-reduced-motion: reduce) {{ .switch {{ transition: none; }} }}
 </style>
 </head>
 <body>
@@ -445,6 +559,7 @@ footer {{ margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--borde
     <h1>Royal Bliss (Pvt) Ltd — cash tracker</h1>
     <p class="sub">Sampath Bank current account · LKR · {esc(period)} ·
        {len(analysis.ledger)} transactions · generated {esc(generated)}</p>
+    {_download_block(workbook)}
   </header>
 
   {_status_block(report)}
@@ -471,17 +586,17 @@ footer {{ margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--borde
   </section>
 
   <section class="card">
-    <h2>Who is funding the business</h2>
-    <p class="note">Named counterparties only. These are contributions and
-       payments, not customer revenue — do not read them as sales.</p>
-    {_ranked_bars(analysis.by_counterparty)}
-    {_bucket_table(analysis.by_counterparty, "Counterparty")}
+    <h2>Breakdown</h2>
+    <p class="note">Group the same transactions seven different ways. Every cut
+       covers the whole period, so the totals agree across all of them.</p>
+    {_grouping_block(analysis)}
   </section>
+
+  {_unclassified_block(analysis)}
 
   <section class="card">
     <h2>Where the money goes</h2>
     <p class="note">{esc(concentration)}</p>
-    {_bucket_table(analysis.by_category, "Category")}
     <h3>Largest payments</h3>
     {_movements_table(analysis.largest_out, "Out (LKR)")}
     <h3>Largest receipts</h3>
@@ -506,6 +621,28 @@ footer {{ margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--borde
        relying on them for a filing or a board decision.</p>
   </footer>
 </div>
+<script>
+// Switch which breakdown is on screen. Every panel is already in the page, so
+// this only toggles visibility — nothing is fetched, computed or lost, and the
+// page still reads correctly with the script disabled.
+(function () {{
+  var switcher = document.querySelector('.switcher');
+  if (!switcher) return;
+  switcher.addEventListener('click', function (event) {{
+    var button = event.target.closest('.switch');
+    if (!button) return;
+    var wanted = button.dataset.group;
+    switcher.querySelectorAll('.switch').forEach(function (other) {{
+      var on = other === button;
+      other.classList.toggle('is-active', on);
+      other.setAttribute('aria-pressed', String(on));
+    }});
+    document.querySelectorAll('[data-panel]').forEach(function (panel) {{
+      panel.hidden = panel.dataset.panel !== wanted;
+    }});
+  }});
+}})();
+</script>
 </body>
 </html>
 """

@@ -30,6 +30,11 @@ CATEGORIES = {
     "bank_charge": "Bank charge",
     "other_in": "Other receipt",
     "other_out": "Other payment",
+    # A row whose treatment has not been decided yet. Rows arrive this way from
+    # a new statement and are resolved by `classify`. It is direction-agnostic
+    # on purpose — you should not have to know what a payment was for in order
+    # to record that it happened.
+    "unclassified": "Unclassified",
 }
 
 INFLOW_CATEGORIES = {c for c in CATEGORIES if c.endswith("_in") or c == "opening_deposit"}
@@ -172,7 +177,7 @@ def load_transactions(path: Path | str) -> list[Transaction]:
                     f"Expected one of: {', '.join(sorted(CATEGORIES))}"
                 )
             direction_in = category in INFLOW_CATEGORIES
-            if direction_in != bool(credit):
+            if category != "unclassified" and direction_in != bool(credit):
                 raise LedgerError(
                     f"row {offset}: category {category!r} disagrees with the "
                     "amount column — an inflow category needs a credit"

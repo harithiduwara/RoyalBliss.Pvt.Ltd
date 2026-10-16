@@ -10,4 +10,5 @@ venv/
 # rendered finance dashboard out of it. See .claude/skills/software-architect.
 data/transactions.csv
 data/statements.csv
+data/rules.csv
 build-finance/
